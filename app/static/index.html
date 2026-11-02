@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Automata TV</title>
+<style>
+:root{--navy:#0e2438;--navy2:#16344f;--teal:#1b8fb3;--live:#d6342c;--ok:#1f9d63;--bg:#eef2f6;--card:#fff;--ink:#12202e;--muted:#5d6f80;--line:#d9e1e9}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;display:grid;grid-template-rows:auto 1fr}
+header{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;display:flex;align-items:center;gap:24px;padding:12px 20px}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+#clock{font:600 22px ui-monospace,Consolas,monospace;margin:0 auto}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;border:1px solid #ffffff33;font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:#8a98a6}
+.pill.ok .dot{background:#35d28a}.pill.bad .dot{background:#ff6b5e}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:0}
+nav{background:#f8fafc;border-right:1px solid var(--line);padding:14px 10px}
+nav a{display:block;padding:10px 12px;border-radius:8px;color:var(--ink);margin-bottom:4px}
+nav a small{display:block;color:var(--muted);font-size:12px}
+nav a.on{background:var(--teal);color:#fff}nav a.on small{color:#ffffffcc}
+nav a.off{opacity:.45}
+main{padding:20px;display:grid;gap:16px;align-content:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
+.card h2{margin:0 0 12px;font-size:16px}
+.program{border:2px solid var(--line)}
+.program.live{border-color:var(--live)}
+.badge{display:inline-block;padding:3px 10px;border-radius:5px;font-weight:700;font-size:12px;background:#e3e9ef;color:var(--muted)}
+.program.live .badge{background:var(--live);color:#fff}
+#now{font-size:20px;font-weight:700;margin:10px 0 4px;overflow-wrap:anywhere}
+#tc{font:600 16px ui-monospace,Consolas,monospace;color:var(--muted)}
+.bar{height:8px;background:#e3e9ef;border-radius:4px;margin:12px 0;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--teal)}
+button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:8px 14px;background:var(--teal);color:#fff;cursor:pointer}
+button.sec{background:#e3e9ef;color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #1b8fb355;outline-offset:1px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+input,select{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
+input{flex:1;min-width:160px}
+table{width:100%;border-collapse:collapse}
+th{background:var(--navy);color:#fff;text-align:left;padding:9px 12px;font-weight:600}
+td{padding:9px 12px;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;width:130px}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+#banner{display:none;background:#fff6e0;border:1px solid #f0d28a;border-radius:8px;padding:12px 16px;align-items:center;gap:12px;justify-content:space-between}
+#msg{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;display:none;max-width:90vw}
+@media(max-width:760px){.layout{grid-template-columns:1fr}nav{display:none}header{flex-wrap:wrap}#clock{margin:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Automata TV <small id="ver" style="font-weight:400;opacity:.7;font-size:12px"></small></h1>
+  <div id="clock">--:--:--</div>
+  <div id="conn" class="pill"><span class="dot"></span><span id="connTxt">Conectando…</span></div>
+</header>
+<div class="layout">
+  <nav aria-label="Módulos">
+    <a class="on" href="#">Control maestro<small>Reproducción y emisión</small></a>
+    <a class="off">Biblioteca<small>Fase 3</small></a>
+    <a class="off">Parrilla 24/7<small>Fase 4</small></a>
+    <a class="off">Publicidad<small>Fase 4</small></a>
+    <a class="off">Historial As-Run<small>Fase 5</small></a>
+    <a class="off">Emergencia<small>Fase 5</small></a>
+  </nav>
+  <main>
+    <div id="banner"><span id="bannerTxt"></span><button id="btnSetup">Preparar OBS</button></div>
+    <section class="card program" id="program">
+      <h2>Programa</h2>
+      <span class="badge" id="badge">Detenido</span>
+      <div id="now">Nada en reproducción</div>
+      <div id="tc">00:00:00 / 00:00:00</div>
+      <div class="bar"><i id="prog"></i></div>
+      <button class="sec" id="btnStop">Detener</button>
+    </section>
+    <section class="card">
+      <h2>Biblioteca de videos</h2>
+      <div class="tools">
+        <input id="q" type="search" placeholder="Buscar por nombre" aria-label="Buscar por nombre">
+        <select id="cat" aria-label="Categoría"><option value="">Todas las carpetas</option></select>
+        <button class="sec" id="btnRefresh">Actualizar lista</button>
+      </div>
+      <table><thead><tr><th>Video</th><th>Carpeta</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    </section>
+  </main>
+</div>
+<div id="msg" role="status"></div>
+<script>
+const $=s=>document.querySelector(s);
+let lib=[];
+const fmt=ms=>{if(ms==null||ms<0)ms=0;const s=Math.floor(ms/1000),p=n=>String(n).padStart(2,"0");return `${p(Math.floor(s/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`};
+function toast(t){const m=$("#msg");m.textContent=t;m.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display="none",4500)}
+async function api(path,body){
+  const r=await fetch("/api"+path,body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.detail||r.statusText);
+  return d;
+}
+setInterval(()=>$("#clock").textContent=new Date().toLocaleTimeString("es-CL",{hour12:false}),500);
+
+async function poll(){
+  let s;
+  try{s=await api("/status")}catch(e){s={connected:false,error:"El servidor no responde"}}
+  const c=$("#conn");
+  c.className="pill "+(s.connected?"ok":"bad");
+  $("#connTxt").textContent=s.connected?`OBS conectado${s.obs_version?" · v"+s.obs_version:""}`:"OBS sin conexión";
+  c.title=s.error||"";
+  if(s.version)$("#ver").textContent="v"+s.version;
+  const b=$("#banner");
+  if(!s.connected){b.style.display="flex";$("#bannerTxt").textContent=s.error?`No se pudo conectar con OBS: ${s.error}. Revisa que OBS esté abierto, con el servidor WebSocket activo y la contraseña en .env.`:"Sin conexión con OBS.";$("#btnSetup").style.display="none"}
+  else if(!s.ready){b.style.display="flex";$("#bannerTxt").textContent=`Falta la escena «${s.scene}» en OBS. Se crea sola al reproducir, o puedes crearla ahora.`;$("#btnSetup").style.display=""}
+  else b.style.display="none";
+  const m=s.media,live=!!(m&&m.state==="OBS_MEDIA_STATE_PLAYING"&&s.program_scene===s.scene);
+  $("#program").classList.toggle("live",live);
+  $("#badge").textContent=live?"En el aire":(m&&m.state==="OBS_MEDIA_STATE_PAUSED"?"En pausa":"Detenido");
+  $("#now").textContent=(m&&m.file)||"Nada en reproducción";
+  const d=m?m.duration_ms:0,cur=m?m.cursor_ms:0;
+  $("#tc").textContent=`${fmt(cur)} / ${fmt(d)}`;
+  $("#prog").style.width=d>0?Math.min(100,cur/d*100)+"%":"0";
+}
+function render(){
+  const q=$("#q").value.toLowerCase(),cat=$("#cat").value,tb=$("#rows");
+  tb.replaceChildren();
+  const list=lib.filter(i=>(!cat||i.category===cat)&&i.name.toLowerCase().includes(q));
+  if(!list.length){const tr=tb.insertRow(),td=tr.insertCell();td.colSpan=3;td.className="empty";
+    td.textContent=lib.length?"Ningún video coincide con la búsqueda.":"No hay videos. Copia archivos a la carpeta definida en MEDIA_HOST_DIR y pulsa «Actualizar lista».";return}
+  for(const i of list){
+    const tr=tb.insertRow();
+    tr.insertCell().textContent=i.name;
+    tr.insertCell().textContent=i.category;
+    const b=document.createElement("button");b.textContent="Reproducir";
+    b.onclick=async()=>{b.disabled=true;try{await api("/play",{path:i.path});poll()}catch(e){toast(e.message)}b.disabled=false};
+    tr.insertCell().append(b);
+  }
+}
+async function loadLib(){
+  try{lib=await api("/library")}catch(e){toast(e.message)}
+  const cats=[...new Set(lib.map(i=>i.category))],sel=$("#cat"),cur=sel.value;
+  sel.replaceChildren(new Option("Todas las carpetas",""),...cats.map(c=>new Option(c,c)));
+  sel.value=cats.includes(cur)?cur:"";
+  render();
+}
+$("#q").oninput=render;$("#cat").onchange=render;$("#btnRefresh").onclick=loadLib;
+$("#btnStop").onclick=async()=>{try{await api("/stop",{});poll()}catch(e){toast(e.message)}};
+$("#btnSetup").onclick=async()=>{try{await api("/setup",{});poll()}catch(e){toast(e.message)}};
+loadLib();poll();setInterval(poll,1000);
+</script>
+</body>
+</html>

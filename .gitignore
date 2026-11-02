@@ -1,0 +1,14 @@
+# Secretos y entorno
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# Datos locales y videos (no se versionan)
+data/
+media/*
+!media/.gitkeep
+
+# Sistema
+.DS_Store
+Thumbs.db

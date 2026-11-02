@@ -1,0 +1,18 @@
+services:
+  automata-tv:
+    build: .
+    container_name: automata-tv
+    ports:
+      - "8000:8000"
+    environment:
+      OBS_HOST: host.docker.internal
+      OBS_PORT: ${OBS_PORT:-4455}
+      OBS_PASSWORD: ${OBS_PASSWORD:-}
+      MEDIA_DIR: /media
+      # Misma carpeta, pero con la ruta tal como la ve OBS en tu equipo
+      OBS_MEDIA_DIR: ${MEDIA_HOST_DIR:-./media}
+    volumes:
+      - ${MEDIA_HOST_DIR:-./media}:/media:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
