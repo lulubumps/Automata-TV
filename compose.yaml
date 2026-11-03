@@ -1,0 +1,24 @@
+services:
+  tv:
+    build: .
+    container_name: automata-tv
+    restart: unless-stopped
+    ports:
+      # Solo accesible desde este equipo. No tiene login: no lo expongas a internet.
+      - "127.0.0.1:8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # necesario en Linux; Docker Desktop ya lo trae
+    environment:
+      TZ: ${TZ:-America/Santiago}
+      OBS_HOST: ${OBS_HOST:-host.docker.internal}
+      OBS_PORT: ${OBS_PORT:-4455}
+      OBS_PASSWORD: ${OBS_PASSWORD:-}
+      OBS_INPUT: ${OBS_INPUT:-TV_PLAYER}
+      # Tu carpeta de videos tal como la ve OBS. Si OBS corre en este mismo equipo, es la misma MEDIA_DIR.
+      OBS_MEDIA_ROOT: ${OBS_MEDIA_ROOT:-${MEDIA_DIR:-./media}}
+    volumes:
+      - tvdata:/data
+      - ${MEDIA_DIR:-./media}:/media:ro # solo lectura: el automatizador nunca toca tus videos
+
+volumes:
+  tvdata:

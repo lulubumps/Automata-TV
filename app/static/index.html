@@ -2,148 +2,431 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Automata TV</title>
 <style>
-:root{--navy:#0e2438;--navy2:#16344f;--teal:#1b8fb3;--live:#d6342c;--ok:#1f9d63;--bg:#eef2f6;--card:#fff;--ink:#12202e;--muted:#5d6f80;--line:#d9e1e9}
+:root{
+  --bg:#d9dcd6; --panel:#eceee9; --ink:#1a2233; --muted:#5b6579; --line:#bcc1b8;
+  --prog:#2a55c9; --ad:#c97d00; --air:#d1322a; --ok:#2b8a57; --r:6px;
+}
 *{box-sizing:border-box}
-body{margin:0;font:14px/1.45 system-ui,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;display:grid;grid-template-rows:auto 1fr}
-header{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;display:flex;align-items:center;gap:24px;padding:12px 20px}
-header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
-#clock{font:600 22px ui-monospace,Consolas,monospace;margin:0 auto}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:6px;border:1px solid #ffffff33;font-size:13px}
-.dot{width:9px;height:9px;border-radius:50%;background:#8a98a6}
-.pill.ok .dot{background:#35d28a}.pill.bad .dot{background:#ff6b5e}
-.layout{display:grid;grid-template-columns:220px 1fr;min-height:0}
-nav{background:#f8fafc;border-right:1px solid var(--line);padding:14px 10px}
-nav a{display:block;padding:10px 12px;border-radius:8px;color:var(--ink);margin-bottom:4px}
-nav a small{display:block;color:var(--muted);font-size:12px}
-nav a.on{background:var(--teal);color:#fff}nav a.on small{color:#ffffffcc}
-nav a.off{opacity:.45}
-main{padding:20px;display:grid;gap:16px;align-content:start}
-.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px}
-.card h2{margin:0 0 12px;font-size:16px}
-.program{border:2px solid var(--line)}
-.program.live{border-color:var(--live)}
-.badge{display:inline-block;padding:3px 10px;border-radius:5px;font-weight:700;font-size:12px;background:#e3e9ef;color:var(--muted)}
-.program.live .badge{background:var(--live);color:#fff}
-#now{font-size:20px;font-weight:700;margin:10px 0 4px;overflow-wrap:anywhere}
-#tc{font:600 16px ui-monospace,Consolas,monospace;color:var(--muted)}
-.bar{height:8px;background:#e3e9ef;border-radius:4px;margin:12px 0;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--teal)}
-button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:8px 14px;background:var(--teal);color:#fff;cursor:pointer}
-button.sec{background:#e3e9ef;color:var(--ink)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #1b8fb355;outline-offset:1px}
-button:disabled{opacity:.5;cursor:not-allowed}
-.tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-input,select{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
-input{flex:1;min-width:160px}
-table{width:100%;border-collapse:collapse}
-th{background:var(--navy);color:#fff;text-align:left;padding:9px 12px;font-weight:600}
-td{padding:9px 12px;border-bottom:1px solid var(--line)}
-td:last-child{text-align:right;width:130px}
-.empty{padding:22px;text-align:center;color:var(--muted)}
-#banner{display:none;background:#fff6e0;border:1px solid #f0d28a;border-radius:8px;padding:12px 16px;align-items:center;gap:12px;justify-content:space-between}
-#msg{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;display:none;max-width:90vw}
-@media(max-width:760px){.layout{grid-template-columns:1fr}nav{display:none}header{flex-wrap:wrap}#clock{margin:0}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI Variable Text","Avenir Next","Helvetica Neue",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:var(--r);padding:6px 12px}
+button:hover{border-color:var(--ink)}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.danger{background:var(--air);color:#fff;border-color:var(--air)}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:3px solid var(--prog);outline-offset:2px}
+header{display:flex;align-items:center;gap:16px;padding:12px 24px;background:var(--ink);color:#e9ecf2}
+header h1{margin:0;font-size:18px;font-weight:600;letter-spacing:.2px;margin-right:auto}
+header h1 small{font-weight:400;font-size:13px;color:#9aa5bd;margin-left:6px}
+header button{background:transparent;color:#e9ecf2;border-color:#4a5570}
+.pill{display:flex;align-items:center;gap:8px;font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ad)}
+.pill.on .dot{background:#4fd08a}
+main{display:grid;grid-template-columns:minmax(340px,5fr) 7fr;gap:16px;padding:16px 24px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.panel h2{margin:0;padding:12px 16px;font-size:16px;font-weight:600;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.panel h2 .spacer{margin-left:auto}
+.col{display:grid;gap:16px}
+
+/* Al aire */
+.air{border-top:8px solid var(--line)}
+.air.k-programa{border-top-color:var(--prog)}
+.air.k-comercial{border-top-color:var(--ad)}
+.air-body{padding:16px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:14px}
+.tag .rec{width:10px;height:10px;border-radius:50%;background:var(--air);animation:pulse 1.4s ease-in-out infinite}
+.tag.off{color:var(--muted)}
+.tag.off .rec{background:var(--muted);animation:none}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.tag .rec{animation:none}}
+.air-title{font-size:22px;font-weight:600;margin:10px 0 2px;overflow-wrap:anywhere}
+.kind{color:var(--muted)}
+.clock{font-size:64px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1.1;margin:12px 0 4px}
+.clock small{font-size:16px;color:var(--muted);margin-left:8px}
+.bar{height:8px;background:#d3d7ce;border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--prog);transition:width .9s linear}
+.k-comercial .bar>i{background:var(--ad)}
+.transport{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 12px}
+.next{color:var(--muted);overflow-wrap:anywhere}
+.next b{color:var(--ink);font-weight:600}
+.hint{color:var(--muted);margin:10px 0 0}
+
+/* Listas */
+ul{list-style:none;margin:0;padding:0}
+.row{display:grid;grid-template-columns:6px 1fr auto;gap:12px;align-items:center;padding:8px 12px 8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .stripe{align-self:stretch;background:var(--prog)}
+.row.kind-comercial .stripe{background:var(--ad)}
+.row.now{background:#dfe6f7}
+.row.kind-comercial.now{background:#f6e8cf}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .p{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.row .btns{display:flex;gap:4px}
+.row .btns button{padding:4px 9px}
+.empty{padding:20px 16px;color:var(--muted)}
+.scroll{max-height:340px;overflow:auto}
+.tabs{display:flex;gap:4px;padding:8px 12px 0}
+.tabs button{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:0;background:transparent}
+.tabs button[aria-selected=true]{background:#fff;font-weight:600}
+.manual{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.manual input[type=text]{flex:1 1 220px}
+input[type=text],input[type=number],input[type=password],select{border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;background:#fff}
+.log{padding:10px 16px;font-size:13px;color:var(--muted);max-height:180px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Árbol de carpetas */
+.filter{padding:10px 12px 0}
+.filter input{width:100%}
+details.fold{border-bottom:1px solid var(--line)}
+details.fold>summary{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;list-style:none;font-weight:600}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸";color:var(--muted);width:1em;transition:transform .15s}
+details.fold[open]>summary::before{transform:rotate(90deg)}
+details.fold>summary .n{color:var(--muted);font-weight:400;font-size:13px}
+details.fold>summary button{margin-left:auto;padding:3px 9px;font-weight:400}
+.fold-body{margin-left:18px;border-left:2px solid var(--line)}
+.cat-pelicula .stripe,.row.cat-pelicula .stripe{background:var(--prog)}
+.row.cat-serie .stripe{background:#7a3fc2}
+.row.cat-serie.now{background:#ebe1f6}
+@media (prefers-reduced-motion:reduce){details.fold>summary::before{transition:none}}
+
+/* Informe */
+#rep{width:min(820px,96vw)}
+#repText{width:100%;height:380px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:var(--r);padding:10px;background:#fff;resize:vertical}
+.rep-sum{font-weight:600}
+.rep-sum.bad{color:var(--air)}.rep-sum.ok{color:var(--ok)}
+.rep-test{display:flex;gap:8px;align-items:flex-start;color:var(--muted);font-size:14px}
+.rep-test input{margin-top:4px}
+
+/* Ajustes */
+dialog{border:1px solid var(--line);border-radius:var(--r);padding:0;width:min(560px,94vw);background:var(--panel);color:var(--ink)}
+dialog::backdrop{background:rgba(26,34,51,.5)}
+dialog h2{margin:0;padding:14px 18px;font-size:17px;border-bottom:1px solid var(--line)}
+.form{display:grid;gap:12px;padding:16px 18px}
+.form label{display:grid;gap:4px;font-weight:600}
+.form label span{font-weight:400;color:var(--muted);font-size:13px}
+.form .two{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.form .check{display:flex;gap:8px;align-items:center}
+.form fieldset{border:1px solid var(--line);border-radius:var(--r);display:grid;gap:12px;padding:12px}
+.form legend{font-weight:600;padding:0 6px}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r);display:none;max-width:90vw}
+
+@media (max-width:900px){main{grid-template-columns:1fr;padding:12px}.clock{font-size:48px}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Automata TV <small id="ver" style="font-weight:400;opacity:.7;font-size:12px"></small></h1>
-  <div id="clock">--:--:--</div>
-  <div id="conn" class="pill"><span class="dot"></span><span id="connTxt">Conectando…</span></div>
+  <h1>Automata TV <small id="ver"></small></h1>
+  <div class="pill" id="obs"><span class="dot"></span><span id="obsText">Buscando OBS…</span></div>
+  <button data-act="report">Informe</button>
+  <button id="btnSettings" data-act="settings">Ajustes</button>
 </header>
-<div class="layout">
-  <nav aria-label="Módulos">
-    <a class="on" href="#">Control maestro<small>Reproducción y emisión</small></a>
-    <a class="off">Biblioteca<small>Fase 3</small></a>
-    <a class="off">Parrilla 24/7<small>Fase 4</small></a>
-    <a class="off">Publicidad<small>Fase 4</small></a>
-    <a class="off">Historial As-Run<small>Fase 5</small></a>
-    <a class="off">Emergencia<small>Fase 5</small></a>
-  </nav>
-  <main>
-    <div id="banner"><span id="bannerTxt"></span><button id="btnSetup">Preparar OBS</button></div>
-    <section class="card program" id="program">
-      <h2>Programa</h2>
-      <span class="badge" id="badge">Detenido</span>
-      <div id="now">Nada en reproducción</div>
-      <div id="tc">00:00:00 / 00:00:00</div>
-      <div class="bar"><i id="prog"></i></div>
-      <button class="sec" id="btnStop">Detener</button>
-    </section>
-    <section class="card">
-      <h2>Biblioteca de videos</h2>
-      <div class="tools">
-        <input id="q" type="search" placeholder="Buscar por nombre" aria-label="Buscar por nombre">
-        <select id="cat" aria-label="Categoría"><option value="">Todas las carpetas</option></select>
-        <button class="sec" id="btnRefresh">Actualizar lista</button>
-      </div>
-      <table><thead><tr><th>Video</th><th>Carpeta</th><th></th></tr></thead><tbody id="rows"></tbody></table>
-    </section>
-  </main>
-</div>
-<div id="msg" role="status"></div>
-<script>
-const $=s=>document.querySelector(s);
-let lib=[];
-const fmt=ms=>{if(ms==null||ms<0)ms=0;const s=Math.floor(ms/1000),p=n=>String(n).padStart(2,"0");return `${p(Math.floor(s/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`};
-function toast(t){const m=$("#msg");m.textContent=t;m.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display="none",4500)}
-async function api(path,body){
-  const r=await fetch("/api"+path,body===undefined?{}:{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(d.detail||r.statusText);
-  return d;
-}
-setInterval(()=>$("#clock").textContent=new Date().toLocaleTimeString("es-CL",{hour12:false}),500);
 
-async function poll(){
-  let s;
-  try{s=await api("/status")}catch(e){s={connected:false,error:"El servidor no responde"}}
-  const c=$("#conn");
-  c.className="pill "+(s.connected?"ok":"bad");
-  $("#connTxt").textContent=s.connected?`OBS conectado${s.obs_version?" · v"+s.obs_version:""}`:"OBS sin conexión";
-  c.title=s.error||"";
-  if(s.version)$("#ver").textContent="v"+s.version;
-  const b=$("#banner");
-  if(!s.connected){b.style.display="flex";$("#bannerTxt").textContent=s.error?`No se pudo conectar con OBS: ${s.error}. Revisa que OBS esté abierto, con el servidor WebSocket activo y la contraseña en .env.`:"Sin conexión con OBS.";$("#btnSetup").style.display="none"}
-  else if(!s.ready){b.style.display="flex";$("#bannerTxt").textContent=`Falta la escena «${s.scene}» en OBS. Se crea sola al reproducir, o puedes crearla ahora.`;$("#btnSetup").style.display=""}
-  else b.style.display="none";
-  const m=s.media,live=!!(m&&m.state==="OBS_MEDIA_STATE_PLAYING"&&s.program_scene===s.scene);
-  $("#program").classList.toggle("live",live);
-  $("#badge").textContent=live?"En el aire":(m&&m.state==="OBS_MEDIA_STATE_PAUSED"?"En pausa":"Detenido");
-  $("#now").textContent=(m&&m.file)||"Nada en reproducción";
-  const d=m?m.duration_ms:0,cur=m?m.cursor_ms:0;
-  $("#tc").textContent=`${fmt(cur)} / ${fmt(d)}`;
-  $("#prog").style.width=d>0?Math.min(100,cur/d*100)+"%":"0";
+<main>
+  <div class="col">
+    <section class="panel air k-off" id="air" aria-live="polite">
+      <div class="air-body">
+        <div class="tag off" id="airTag"><span class="rec"></span><span id="airTagText">Fuera del aire</span></div>
+        <div class="air-title" id="airTitle">Sin emisión</div>
+        <div class="kind" id="airKind"></div>
+        <div class="clock" id="clock">0:00<small id="clockTotal"></small></div>
+        <div class="bar"><i id="progress"></i></div>
+        <div class="transport">
+          <button class="primary" id="btnStart" data-act="start">Iniciar emisión</button>
+          <button id="btnSkip" data-act="skip">Saltar</button>
+          <button id="btnSkipBreak" data-act="skipBreak">Saltar tanda</button>
+          <button class="danger" id="btnStop" data-act="stop">Detener</button>
+        </div>
+        <div class="next" id="next"></div>
+        <p class="hint" id="airHint"></p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Registro</h2>
+      <div class="log" id="log"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="panel">
+      <h2>Parrilla <span class="spacer"></span><button data-act="clear">Vaciar</button></h2>
+      <div class="scroll"><ul id="playlist"></ul></div>
+    </section>
+
+    <section class="panel">
+      <h2>Biblioteca <span class="spacer"></span><button data-act="rescan">Actualizar carpetas</button></h2>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-pelicula" data-act="tab" data-cat="pelicula" aria-selected="true">Películas</button>
+        <button role="tab" id="tab-serie" data-act="tab" data-cat="serie" aria-selected="false">Series</button>
+        <button role="tab" id="tab-comercial" data-act="tab" data-cat="comercial" aria-selected="false">Comerciales</button>
+        <span style="margin-left:auto"></span>
+        <button data-act="addAll">Agregar todo</button>
+      </div>
+      <div class="filter"><input type="text" id="filter" placeholder="Buscar por nombre en esta pestaña" aria-label="Buscar"></div>
+      <div class="scroll" id="library"></div>
+      <div class="manual">
+        <input type="text" id="manualPath" placeholder="Ruta dentro de la carpeta de videos, por ejemplo Comerciales/spot.mp4" aria-label="Ruta de un video">
+        <select id="manualKind" aria-label="Tipo"><option value="pelicula">Película</option><option value="serie">Serie</option><option value="comercial">Comercial</option></select>
+        <button data-act="addManual">Agregar a la parrilla</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <h2>Ajustes</h2>
+  <div class="form">
+    <fieldset>
+      <legend>Conexión con OBS</legend>
+      <div class="two">
+        <label>Servidor<input type="text" id="fHost"><span>Con Docker, OBS en el mismo equipo: host.docker.internal</span></label>
+        <label>Puerto<input type="number" id="fPort"></label>
+      </div>
+      <label>Contraseña<input type="password" id="fPass" autocomplete="off"><span>Déjala vacía para mantener la actual.</span></label>
+      <label>Nombre de la fuente de medios en OBS<input type="text" id="fInput"></label>
+      <label>Carpeta de videos vista desde OBS<input type="text" id="fObsRoot" placeholder="C:\TV  o  /home/yo/TV"><span>La misma carpeta de videos, con la ruta que tiene en el equipo donde corre OBS.</span></label>
+    </fieldset>
+    <fieldset>
+      <legend>Carpetas dentro de tu carpeta de videos</legend>
+      <label>Películas<input type="text" id="fPel" placeholder="Peliculas"></label>
+      <label>Series<input type="text" id="fSer" placeholder="Series"><span>Una carpeta por serie y dentro sus temporadas. Numera los episodios (01, 02…) para que salgan en orden.</span></label>
+      <label>Comerciales<input type="text" id="fCom" placeholder="Comerciales"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Emisión</legend>
+      <label>Comerciales tras cada programa<input type="number" id="fBreak" min="0" max="20"><span>Se toman de la carpeta de comerciales, en rotación. 0 desactiva las tandas.</span></label>
+      <label class="check"><input type="checkbox" id="fLoop"> Repetir la parrilla al terminar (24/7)</label>
+    </fieldset>
+  </div>
+  <div class="dlg-foot">
+    <button data-act="closeSettings">Cancelar</button>
+    <button class="primary" data-act="saveSettings">Guardar ajustes</button>
+  </div>
+</dialog>
+<dialog id="rep">
+  <h2>Informe de diagnóstico</h2>
+  <div class="form">
+    <div class="rep-sum" id="repSum">Generando…</div>
+    <textarea id="repText" readonly aria-label="Informe" spellcheck="false"></textarea>
+    <label class="rep-test"><input type="checkbox" id="repTest"><span>Incluir prueba de reproducción: carga un video en OBS y comprueba si arranca. Interrumpe lo que esté al aire y no se hace si la emisión está en marcha.</span></label>
+    <span style="color:var(--muted);font-size:13px">No incluye contraseñas. Copia el informe y pégalo en la conversación para que se pueda revisar.</span>
+  </div>
+  <div class="dlg-foot">
+    <button data-act="repRun">Generar de nuevo</button>
+    <button data-act="repDownload">Descargar .txt</button>
+    <button class="primary" data-act="repCopy">Copiar informe</button>
+    <button data-act="repClose">Cerrar</button>
+  </div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = (s) => document.querySelector(s)
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+const CAT = { pelicula: 'Película', serie: 'Serie', comercial: 'Comercial' }
+const label = (it) => CAT[it.category || (it.kind === 'comercial' ? 'comercial' : 'pelicula')] + (it.group ? ' · ' + it.group : '')
+let S = null, lib = {}, libVersion = -1, tab = 'pelicula', query = ''
+
+function fmt(ms) {
+  const s = Math.max(0, Math.round(ms / 1000))
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(sec).padStart(2, '0')
 }
-function render(){
-  const q=$("#q").value.toLowerCase(),cat=$("#cat").value,tb=$("#rows");
-  tb.replaceChildren();
-  const list=lib.filter(i=>(!cat||i.category===cat)&&i.name.toLowerCase().includes(q));
-  if(!list.length){const tr=tb.insertRow(),td=tr.insertCell();td.colSpan=3;td.className="empty";
-    td.textContent=lib.length?"Ningún video coincide con la búsqueda.":"No hay videos. Copia archivos a la carpeta definida en MEDIA_HOST_DIR y pulsa «Actualizar lista».";return}
-  for(const i of list){
-    const tr=tb.insertRow();
-    tr.insertCell().textContent=i.name;
-    tr.insertCell().textContent=i.category;
-    const b=document.createElement("button");b.textContent="Reproducir";
-    b.onclick=async()=>{b.disabled=true;try{await api("/play",{path:i.path});poll()}catch(e){toast(e.message)}b.disabled=false};
-    tr.insertCell().append(b);
+let toastTimer
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block'
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = 'none'), 4000)
+}
+async function api(path, body) {
+  try {
+    const r = await fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) toast(j.error || 'Algo salió mal')
+    return j
+  } catch { toast('No se pudo hablar con el servidor'); return {} }
+}
+
+function render() {
+  if (!S) return
+  const playing = S.status === 'playing'
+  if (S.version) $('#ver').textContent = 'v' + S.version
+  $('#obs').classList.toggle('on', S.connected)
+  $('#obsText').textContent = S.connected ? 'OBS conectado' : 'Buscando OBS…'
+
+  const air = $('#air')
+  air.className = 'panel air ' + (playing && S.current ? 'k-' + S.current.kind : 'k-off')
+  $('#airTag').className = 'tag' + (playing ? '' : ' off')
+  $('#airTagText').textContent = playing ? 'Al aire' : 'Fuera del aire'
+  $('#airTitle').textContent = playing && S.current ? S.current.title : 'Sin emisión'
+  $('#airKind').textContent = playing && S.current ? label(S.current) + (S.breakLeft ? ` · quedan ${S.breakLeft} en la tanda` : '') : ''
+  const rest = S.duration ? S.duration - S.cursor : 0
+  $('#clock').firstChild.textContent = playing && S.duration ? fmt(rest) : '0:00'
+  $('#clockTotal').textContent = playing && S.duration ? 'restante de ' + fmt(S.duration) : ''
+  $('#progress').style.width = playing && S.duration ? (S.cursor / S.duration * 100).toFixed(1) + '%' : '0'
+  $('#next').innerHTML = S.next ? 'Sigue: <b>' + esc(S.next.title) + '</b> (' + esc(label(S.next)) + ')' : ''
+  $('#btnStart').hidden = playing
+  $('#btnSkip').hidden = !playing
+  $('#btnSkipBreak').hidden = !playing
+  $('#btnStop').hidden = !playing
+  $('#btnSkipBreak').disabled = !S.breakLeft
+  $('#btnStart').disabled = !S.playlist.length
+  $('#airHint').textContent = !playing && !S.playlist.length ? 'Agrega videos a la parrilla desde la biblioteca para poder iniciar.' : (!S.connected ? 'Abre OBS con el servidor WebSocket activado para poder emitir.' : '')
+  $('#log').textContent = S.logs.slice().reverse().join('\n')
+
+  $('#playlist').innerHTML = S.playlist.length
+    ? S.playlist.map((p, i) => `
+      <li class="row kind-${p.kind} cat-${p.category}${playing && S.current && S.current.id === p.id ? ' now' : ''}">
+        <span class="stripe"></span>
+        <div><div class="t">${esc(p.title)}</div><div class="p" title="${esc(p.path)}">${esc(label(p))}</div></div>
+        <div class="btns">
+          <button data-act="play" data-id="${p.id}">Al aire</button>
+          <button data-act="up" data-id="${p.id}" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button data-act="down" data-id="${p.id}" aria-label="Bajar" ${i === S.playlist.length - 1 ? 'disabled' : ''}>↓</button>
+          <button data-act="remove" data-id="${p.id}" aria-label="Quitar">✕</button>
+        </div>
+      </li>`).join('')
+    : '<li class="empty">La parrilla está vacía. Agrega programas y comerciales desde la biblioteca o con una ruta.</li>'
+
+  if (S.libraryVersion !== libVersion) {
+    libVersion = S.libraryVersion
+    fetch('/api/library').then((r) => r.json()).then((l) => { lib = l; renderLib() })
   }
 }
-async function loadLib(){
-  try{lib=await api("/library")}catch(e){toast(e.message)}
-  const cats=[...new Set(lib.map(i=>i.category))],sel=$("#cat"),cur=sel.value;
-  sel.replaceChildren(new Option("Todas las carpetas",""),...cats.map(c=>new Option(c,c)));
-  sel.value=cats.includes(cur)?cur:"";
-  render();
+
+const flat = (n) => [...n.items, ...n.folders.flatMap(flat)]
+const nodeAt = (cat, path) => path.split(',').filter(Boolean).reduce((n, i) => n.folders[Number(i)], lib[cat])
+const itemRow = (it, ref) => `
+  <li class="row kind-${it.kind} cat-${it.category}">
+    <span class="stripe"></span>
+    <div><div class="t">${esc(it.title)}</div><div class="p" title="${esc(it.path)}">${esc(label(it))}</div></div>
+    <div class="btns"><button data-act="addLib" ${ref}>Agregar</button></div>
+  </li>`
+
+function folderHtml(n, path) {
+  const kids = n.folders.map((f, i) => folderHtml(f, path + ',' + i)).join('')
+  const items = n.items.map((it, i) => itemRow(it, `data-path="${path}" data-i="${i}"`)).join('')
+  return `<details class="fold"><summary>${esc(n.name)} <span class="n">${n.count}</span>
+    <button data-act="addFolder" data-path="${path}" aria-label="Agregar la carpeta ${esc(n.name)} completa">Agregar carpeta</button></summary>
+    <div class="fold-body"><ul>${items}</ul>${kids}</div></details>`
 }
-$("#q").oninput=render;$("#cat").onchange=render;$("#btnRefresh").onclick=loadLib;
-$("#btnStop").onclick=async()=>{try{await api("/stop",{});poll()}catch(e){toast(e.message)}};
-$("#btnSetup").onclick=async()=>{try{await api("/setup",{});poll()}catch(e){toast(e.message)}};
-loadLib();poll();setInterval(poll,1000);
+
+function renderLib() {
+  for (const c of Object.keys(CAT)) $('#tab-' + c).setAttribute('aria-selected', c === tab)
+  const root = lib[tab]
+  const host = $('#library')
+  if (!root || !root.count) {
+    const dir = S && S.config.folders[tab]
+    host.innerHTML = `<div class="empty">${dir ? 'No se encontraron videos en esa carpeta.' : 'Indica la carpeta de ' + CAT[tab].toLowerCase() + 's en Ajustes.'}</div>`
+    return
+  }
+  if (query) {
+    const q = query.toLowerCase()
+    const hits = flat(root).filter((it) => (it.title + ' ' + it.group).toLowerCase().includes(q))
+    host.innerHTML = hits.length
+      ? '<ul>' + hits.slice(0, 200).map((it) => itemRow(it, `data-find="${esc(it.path)}"`)).join('') + '</ul>'
+      : '<div class="empty">Nada coincide con la búsqueda.</div>'
+    return
+  }
+  host.innerHTML = '<ul>' + root.items.map((it, i) => itemRow(it, `data-path="" data-i="${i}"`)).join('') + '</ul>' +
+    root.folders.map((f, i) => folderHtml(f, String(i))).join('')
+}
+
+async function runReport() {
+  const sum = $('#repSum'), box = $('#repText'), btn = document.querySelector('[data-act=repRun]')
+  sum.className = 'rep-sum'; sum.textContent = $('#repTest').checked ? 'Generando informe y probando reproducción (hasta 10 s)…' : 'Generando…'
+  btn.disabled = true
+  const r = await api('report', { test: $('#repTest').checked })
+  btn.disabled = false
+  if (!r.text) { sum.textContent = 'No se pudo generar el informe'; return }
+  box.value = r.text
+  sum.className = 'rep-sum ' + (r.problems ? 'bad' : 'ok')
+  sum.textContent = r.problems ? `${r.problems} problema(s) y ${r.warnings} aviso(s) detectados` : (r.warnings ? `Sin problemas evidentes, ${r.warnings} aviso(s)` : 'Sin problemas evidentes')
+}
+
+function openSettings() {
+  const c = S.config
+  $('#fHost').value = c.obs.host; $('#fPort').value = c.obs.port; $('#fPass').value = ''
+  $('#fPass').placeholder = c.obs.hasPassword ? 'Contraseña guardada' : 'Sin contraseña'
+  $('#fInput').value = c.obs.input; $('#fObsRoot').value = c.obs.mediaRoot
+  $('#fPel').value = c.folders.pelicula; $('#fSer').value = c.folders.serie; $('#fCom').value = c.folders.comercial
+  $('#fBreak').value = c.breakCount; $('#fLoop').checked = c.loop
+  $('#dlg').showModal()
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act]'); if (!b || !S) return
+  const id = b.dataset.id
+  switch (b.dataset.act) {
+    case 'start': return api('start')
+    case 'stop': return api('stop')
+    case 'skip': return api('skip')
+    case 'skipBreak': return api('skip-break')
+    case 'play': return api('start', { id })
+    case 'up': return api('playlist/move', { id, dir: 'up' })
+    case 'down': return api('playlist/move', { id, dir: 'down' })
+    case 'remove': return api('playlist/remove', { id })
+    case 'clear': if (S.playlist.length && confirm('¿Vaciar toda la parrilla?')) api('playlist/clear'); return
+    case 'rescan': await api('library/scan'); return toast('Carpetas actualizadas')
+    case 'tab': tab = b.dataset.cat; return renderLib()
+    case 'addLib': {
+      const it = b.dataset.find !== undefined ? flat(lib[tab]).find((x) => x.path === b.dataset.find) : nodeAt(tab, b.dataset.path).items[Number(b.dataset.i)]
+      return it && api('playlist/add', { items: [it] })
+    }
+    case 'addFolder': {
+      e.preventDefault() // no abrir/cerrar la carpeta al pulsar el botón
+      const items = flat(nodeAt(tab, b.dataset.path))
+      return items.length && api('playlist/add', { items }).then((r) => !r.error && toast(`${items.length} video(s) agregados a la parrilla`))
+    }
+    case 'addAll': {
+      const items = lib[tab] ? flat(lib[tab]) : []
+      return items.length ? api('playlist/add', { items }).then((r) => !r.error && toast(`${items.length} video(s) agregados a la parrilla`)) : toast('No hay videos en esta pestaña')
+    }
+    case 'addManual': {
+      const p = $('#manualPath').value.trim().replace(/^"|"$/g, '')
+      if (!p) return toast('Escribe la ruta del video')
+      const r = await api('playlist/add', { items: [{ category: $('#manualKind').value, path: p }] })
+      if (!r.error) $('#manualPath').value = ''
+      return
+    }
+    case 'settings': return openSettings()
+    case 'report': $('#rep').showModal(); return runReport()
+    case 'repRun': return runReport()
+    case 'repClose': return $('#rep').close()
+    case 'repCopy': {
+      const box = $('#repText')
+      try { await navigator.clipboard.writeText(box.value) } catch { box.select(); document.execCommand('copy') }
+      return toast('Informe copiado')
+    }
+    case 'repDownload': {
+      const d = new Date(), pad = (n) => String(n).padStart(2, '0')
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([$('#repText').value], { type: 'text/plain;charset=utf-8' }))
+      a.download = `informe-automatizador-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.txt`
+      a.click(); return URL.revokeObjectURL(a.href)
+    }
+    case 'closeSettings': return $('#dlg').close()
+    case 'saveSettings':
+      await api('config', {
+        obs: { host: $('#fHost').value, port: $('#fPort').value, password: $('#fPass').value, input: $('#fInput').value, mediaRoot: $('#fObsRoot').value },
+        folders: { pelicula: $('#fPel').value, serie: $('#fSer').value, comercial: $('#fCom').value },
+        breakCount: $('#fBreak').value, loop: $('#fLoop').checked,
+      })
+      $('#dlg').close(); return toast('Ajustes guardados')
+  }
+})
+
+$('#filter').addEventListener('input', (e) => { query = e.target.value.trim(); renderLib() })
+
+function connect() {
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws')
+  ws.onmessage = (m) => { S = JSON.parse(m.data); render() }
+  ws.onclose = () => setTimeout(connect, 2000)
+}
+connect()
 </script>
 </body>
 </html>

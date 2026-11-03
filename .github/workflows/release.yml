@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que la etiqueta coincide con la versión
+        run: |
+          V=$(python3 -c "import app; print(app.__version__)")
+          if [ "v$V" != "$GITHUB_REF_NAME" ]; then
+            echo "La etiqueta $GITHUB_REF_NAME no coincide con la versión $V de app/__init__.py"
+            exit 1
+          fi
+
+      - name: Extraer las notas del CHANGELOG
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          awk -v h="## [$V]" 'index($0,h)==1{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > notes.md
+          test -s notes.md
+
+      - name: Publicar el release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "Automata TV $GITHUB_REF_NAME" --notes-file notes.md

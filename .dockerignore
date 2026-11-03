@@ -1,7 +1,10 @@
-.git
+.venv/
+.git/
+.github/
+tests/
+data/
+media/
+__pycache__/
+*.pyc
 .env
-.venv
-__pycache__
-media
-data
 *.md
