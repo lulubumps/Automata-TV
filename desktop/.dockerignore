@@ -1,0 +1,8 @@
+*
+!requirements.txt
+!playout.py
+!web/
+!web/Dockerfile
+!web/requirements.txt
+!web/panel.py
+!web/index.html

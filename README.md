@@ -1,5 +1,7 @@
 # Automata TV
 
+> La versión Docker de Automata TV para Esperanza TV está en [desktop](desktop/README.md#docker-con-panel-web). Copia [desktop/.env.example](desktop/.env.example) como `desktop/.env` y configura `MEDIA_PATH` y `OBS_MEDIA_ROOT` según dónde estén los MP4.
+
 Automata TV es un automatizador de televisión 24/7 que controla **OBS** desde una interfaz web: emite películas, series y comerciales en secuencia. Hecho en Python (FastAPI) y empaquetado con Docker, así que corre igual en Windows, Linux y macOS.
 
 Los GCs los manejas tú directamente en OBS: este programa solo cambia el video de una fuente de medios.

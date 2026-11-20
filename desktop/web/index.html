@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Automata TV · Esperanza TV</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#0b111b;color:#e8f1ff;--line:#29374b;--panel:#141e2d;--muted:#a5b6cc;--accent:#82e6ce}
+*{box-sizing:border-box}body{margin:auto;padding:clamp(12px,3vw,32px);max-width:1600px}
+h1,h2,h3,p{margin:0}h1{font-size:clamp(27px,4vw,40px);letter-spacing:-.045em}h2{font-size:19px}h3{font-size:18px;overflow-wrap:anywhere}
+small,.muted{color:var(--muted)}time,.numeric{font-variant-numeric:tabular-nums}
+.bar,.actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{margin-bottom:18px}.clock{text-align:right}.clock time{display:block;font-weight:700;font-size:24px}
+.deck,.workspace{display:grid;gap:14px;margin-bottom:14px}.deck{grid-template-columns:1.2fr 1fr}.workspace{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-width:0;padding:16px}
+.deck .panel{display:grid;gap:10px}.panel-title{margin-bottom:12px}.badge{background:#22364a;color:var(--accent);padding:4px 8px;border-radius:5px;font-size:13px}
+button,input,select{font:inherit;color:inherit;background:#0e1827;border:1px solid #40536e;border-radius:6px;padding:8px;min-width:0}
+button{cursor:pointer}button:disabled{opacity:.5;cursor:default}.primary{background:var(--accent);color:#102925;font-weight:700;border-color:var(--accent)}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.scroll{overflow:auto;max-height:53vh}
+table{width:100%;border-collapse:collapse;text-align:left}th,td{padding:8px;border-bottom:1px solid var(--line)}th{position:sticky;top:0;background:var(--panel);z-index:1}
+td:first-child{white-space:nowrap}td:nth-child(3){overflow-wrap:anywhere}tr.current{background:#1c3b36}tr.past{color:var(--muted)}
+#fileList{max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.file{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px;align-items:center;padding:7px 9px;border-bottom:1px solid var(--line);cursor:pointer}.file:last-child{border-bottom:0}.file span{overflow-wrap:anywhere}.file small{display:block}
+form{display:grid;gap:10px;margin-top:14px}label.field{display:grid;gap:5px}video{width:100%;max-height:240px;background:#080d16;margin-top:10px}
+#message{color:#ffd499;margin:8px 0}#message:empty{display:none}.empty{padding:12px;color:var(--muted)}
+@media(max-width:900px){.workspace,.deck{grid-template-columns:1fr}.scroll{max-height:420px}}
+</style>
+<header class="bar">
+  <div><small>Esperanza TV</small><h1>Automata TV</h1></div>
+  <div class="clock"><time id="clock"></time><small id="zone"></small></div>
+</header>
+<div class="deck">
+  <section class="panel" aria-labelledby="play-title">
+    <div class="bar"><h2 id="play-title">Reproducción OBS</h2><span class="badge" id="mode">Consultando</span></div>
+    <h3 id="playing">—</h3>
+    <p id="status" role="status" class="muted">Cargando estado…</p>
+    <div class="bar"><small id="continuity"></small><button id="control" class="primary" disabled>Activar automatización</button></div>
+  </section>
+  <section class="panel" aria-labelledby="next-title">
+    <h2 id="next-title">Próximo en parrilla</h2><h3 id="next">—</h3><p id="nextTime" class="muted"></p>
+  </section>
+</div>
+<p id="message" role="alert"></p>
+<div class="workspace">
+  <section class="panel">
+    <div class="bar panel-title"><h2>Parrilla</h2><label>Vista <select id="scheduleFilter"><option value="">Todos</option><option>Episodio</option><option>Comercial</option><option>Identificación</option></select></label></div>
+    <div class="scroll"><table><thead><tr><th>Inicio</th><th>Tipo</th><th>Archivo</th><th>Fin</th><th></th></tr></thead><tbody id="schedule"></tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="bar panel-title"><div><h2>Biblioteca MP4</h2><small id="count"></small></div><button type="button" id="reload">Actualizar</button></div>
+    <div class="filters">
+      <input type="search" id="search" placeholder="Buscar archivo" aria-label="Buscar archivo">
+      <select id="folder" aria-label="Filtrar por carpeta"><option value="">Todas las carpetas</option></select>
+    </div>
+    <div id="fileList"></div>
+    <div class="bar" style="margin-top:10px"><small id="selection"></small><button id="clear" type="button">Limpiar selección</button></div>
+    <div class="actions" style="margin-top:10px"><button id="preview">Previsualizar</button><button id="fallback">Usar como continuidad</button></div>
+    <video id="video" controls preload="none" hidden></video>
+    <form id="editor">
+      <div class="filters">
+        <label class="field">Inicio local<input id="start" type="datetime-local" step="1" required></label>
+        <label class="field">Tipo<select id="kind"><option>Episodio</option><option>Comercial</option><option>Identificación</option></select></label>
+      </div>
+      <button class="primary" type="submit">Agregar a la parrilla</button>
+      <small>Los archivos se programan en orden alfabético.</small>
+    </form>
+  </section>
+</div>
+<script>
+const byId = id => document.getElementById(id);
+const control = byId('control');
+const selected = new Set();
+let paths = [], running = false, busy = false, state = null, scheduleKey = '';
+const localTime = value => value.slice(0, 19).replace('T', ' ');
+const nameOf = path => path.split('/').at(-1);
+const folderOf = path => path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
+const formatCountdown = seconds => {
+  const total = Math.max(0, Math.ceil(seconds));
+  return [Math.floor(total / 3600), Math.floor(total / 60) % 60, total % 60]
+    .map(value => String(value).padStart(2, '0')).join(':');
+};
+
+async function api(path, data) {
+  const options = data === undefined ? {cache: 'no-store'} : {
+    method: 'POST', headers: {'Content-Type': 'application/json', 'X-Automata': '1'},
+    body: JSON.stringify(data)
+  };
+  const reply = await fetch('/api/' + path, options);
+  if (!reply.ok) {
+    const problem = await reply.json().catch(() => ({}));
+    throw new Error(typeof problem.detail === 'string' ? problem.detail : 'No se pudo completar la solicitud.');
+  }
+  return reply.json();
+}
+
+function renderSchedule() {
+  if (!state) return;
+  const filter = byId('scheduleFilter').value;
+  const key = JSON.stringify([state.slots, state.playing?.id, filter,
+    state.slots.filter(slot => Date.parse(slot.end) <= state.epoch * 1000).length]);
+  if (key === scheduleKey) return;
+  scheduleKey = key;
+  const body = byId('schedule');
+  body.replaceChildren();
+  for (const slot of state.slots) {
+    if (filter && slot.kind !== filter) continue;
+    const row = body.insertRow();
+    if (state.playing?.id === slot.id) row.className = 'current';
+    else if (Date.parse(slot.end) <= state.epoch * 1000) row.className = 'past';
+    for (const value of [localTime(slot.start), slot.kind, slot.name, localTime(slot.end)]) {
+      row.insertCell().textContent = value;
+    }
+    const button = document.createElement('button');
+    button.textContent = 'Quitar';
+    button.setAttribute('aria-label', 'Quitar ' + slot.name);
+    button.onclick = () => action(() => api('remove', {start: slot.id}));
+    row.insertCell().append(button);
+  }
+  if (!body.rows.length) {
+    const cell = body.insertRow().insertCell();
+    cell.colSpan = 5;
+    cell.textContent = 'No hay eventos en esta vista.';
+  }
+}
+
+async function refresh() {
+  state = await api('state');
+  running = state.running;
+  byId('clock').textContent = localTime(state.now);
+  byId('zone').textContent = state.zone;
+  byId('status').textContent = state.status;
+  byId('mode').textContent = state.stopping ? 'Deteniendo' : running ? 'Automático' : 'Manual';
+  byId('playing').textContent = state.playing ? state.playing.kind + ' · ' + state.playing.name : 'Sin reproducción confirmada';
+  byId('continuity').textContent = state.fallback ? 'Respaldo · ' + state.fallback : 'Selecciona un MP4 de continuidad';
+  const next = state.slots.find(slot => slot.id > state.epoch);
+  byId('next').textContent = next ? next.name : 'Sin eventos próximos';
+  byId('nextTime').textContent = next ? localTime(next.start) + ' · En ' + formatCountdown(next.id - state.epoch) : '';
+  if (!byId('start').dataset.initialized) {
+    byId('start').value = state.now.slice(0, 19);
+    byId('start').dataset.initialized = '1';
+  }
+  control.textContent = running ? 'Ceder control a OBS' : 'Activar automatización';
+  control.disabled = busy || state.stopping;
+  renderSchedule();
+}
+
+function updateSelection() {
+  byId('selection').textContent = selected.size + ' seleccionados';
+  byId('preview').disabled = selected.size !== 1;
+  byId('fallback').disabled = selected.size !== 1;
+  byId('clear').disabled = !selected.size;
+}
+
+function renderFiles() {
+  const query = byId('search').value.trim().toLocaleLowerCase();
+  const folder = byId('folder').value;
+  const visible = paths.filter(path => (!folder || folderOf(path) === folder)
+    && path.toLocaleLowerCase().includes(query));
+  byId('count').textContent = visible.length + ' de ' + paths.length + ' MP4';
+  const list = byId('fileList');
+  const fragment = document.createDocumentFragment();
+  for (const path of visible) {
+    const label = document.createElement('label');
+    label.className = 'file';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selected.has(path);
+    checkbox.onchange = () => {
+      if (checkbox.checked) selected.add(path);
+      else selected.delete(path);
+      updateSelection();
+    };
+    const details = document.createElement('span');
+    details.textContent = nameOf(path);
+    const location = document.createElement('small');
+    location.textContent = folderOf(path) || 'Carpeta principal';
+    details.append(location);
+    label.append(checkbox, details);
+    fragment.append(label);
+  }
+  if (!visible.length) {
+    const empty = document.createElement('p');
+    empty.className = 'empty';
+    empty.textContent = paths.length ? 'No hay coincidencias.' : 'La carpeta montada aún no tiene MP4.';
+    fragment.append(empty);
+  }
+  list.replaceChildren(fragment);
+  updateSelection();
+}
+
+async function loadLibrary() {
+  paths = await api('library');
+  const available = new Set(paths);
+  for (const path of selected) if (!available.has(path)) selected.delete(path);
+  const folder = byId('folder'), previous = folder.value;
+  const folders = [...new Set(paths.map(folderOf).filter(Boolean))].sort();
+  folder.replaceChildren(new Option('Todas las carpetas', ''));
+  for (const option of folders) folder.add(new Option(option, option));
+  folder.value = folders.includes(previous) ? previous : '';
+  renderFiles();
+}
+
+async function action(work) {
+  if (busy) return;
+  busy = true;
+  control.disabled = true;
+  byId('message').textContent = '';
+  try {
+    await work();
+  } catch (error) {
+    byId('message').textContent = error.message;
+  } finally {
+    busy = false;
+    if (state) control.disabled = state.stopping;
+  }
+}
+
+function showConnectionError() {
+  byId('status').textContent = 'El panel perdió conexión con Automata TV.';
+  control.disabled = true;
+}
+
+async function poll() {
+  await refresh().catch(showConnectionError);
+  setTimeout(poll, 1000);
+}
+
+control.onclick = () => action(() => api(running ? 'stop' : 'start', {}));
+byId('reload').onclick = () => action(loadLibrary);
+byId('search').oninput = renderFiles;
+byId('folder').onchange = renderFiles;
+byId('scheduleFilter').onchange = renderSchedule;
+byId('clear').onclick = () => { selected.clear(); renderFiles(); };
+byId('preview').onclick = () => {
+  const video = byId('video');
+  video.src = '/api/preview?' + new URLSearchParams({path: [...selected][0]});
+  video.hidden = false;
+};
+byId('video').onerror = () => {
+  byId('message').textContent = 'No se pudo previsualizar este MP4 en el navegador.';
+};
+byId('fallback').onclick = () => action(() => api('fallback', {path: [...selected][0]}));
+byId('editor').onsubmit = event => {
+  event.preventDefault();
+  action(async () => {
+    if (!selected.size) throw new Error('Selecciona al menos un MP4.');
+    await api('blocks', {start: byId('start').value, kind: byId('kind').value, paths: [...selected]});
+    selected.clear();
+    renderFiles();
+  });
+};
+renderFiles();
+action(loadLibrary);
+poll();
+</script>
+</html>

@@ -1,0 +1,27 @@
+services:
+  automata:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${PANEL_BIND:-127.0.0.1}:${PANEL_PORT:-8000}:8000"
+    environment:
+      CHANNEL_TZ: ${CHANNEL_TZ:-America/Santiago}
+      PANEL_PASSWORD: ${PANEL_PASSWORD:?Define PANEL_PASSWORD en .env}
+      OBS_URL: ${OBS_URL:-ws://host.docker.internal:4455}
+      OBS_PASSWORD: ${OBS_PASSWORD:-}
+      OBS_SCENE: ${OBS_SCENE:-Automata TV}
+      OBS_SOURCE: ${OBS_SOURCE:-TV_PLAYER}
+      OBS_MEDIA_ROOT: ${OBS_MEDIA_ROOT:?Define OBS_MEDIA_ROOT en .env}
+    volumes:
+      - type: bind
+        source: ${MEDIA_PATH:?Define MEDIA_PATH en .env}
+        target: /media
+        read_only: true
+        bind:
+          create_host_path: false
+      - automata-data:/data
+volumes:
+  automata-data:
