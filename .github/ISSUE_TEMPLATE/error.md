@@ -15,4 +15,4 @@ labels: bug
 - Versión de OBS:
 - Sistema operativo:
 
-**Registro de Docker** (`docker compose logs automata-tv`)
+**Registro de Docker** (`docker compose logs automata`)

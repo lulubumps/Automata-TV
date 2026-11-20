@@ -6,5 +6,5 @@
 
 ## Lista de revisión
 - [ ] El servidor arranca y la interfaz carga
-- [ ] Actualicé `CHANGELOG.md` si afecta a quien usa la app
+- [ ] Actualicé la guía de instalación si cambió la configuración
 - [ ] No incluí contraseñas ni videos
