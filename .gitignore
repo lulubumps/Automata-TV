@@ -11,6 +11,7 @@ Thumbs.db
 .vscode/
 .idea/
 # Los videos no van al repositorio
+/TV/
 *.mp4
 *.mkv
 *.mov
